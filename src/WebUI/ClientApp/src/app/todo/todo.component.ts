@@ -1,12 +1,15 @@
 import { Component, TemplateRef, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+
+
 import {
   TodoListsClient, TodoItemsClient,
   TodoListDto, TodoItemDto, PriorityLevelDto,
   CreateTodoListCommand, UpdateTodoListCommand,
   CreateTodoItemCommand, UpdateTodoItemDetailCommand
 } from '../web-api-client';
+import { Color } from '../models/color';
 
 @Component({
   selector: 'app-todo-component',
@@ -25,6 +28,8 @@ export class TodoComponent implements OnInit {
   newListEditor: any = {};
   listOptionsEditor: any = {};
   newListModalRef: BsModalRef;
+  colors = Color.SupportedColors;
+  selectedColor = 'white';
   listOptionsModalRef: BsModalRef;
   deleteListModalRef: BsModalRef;
   itemDetailsModalRef: BsModalRef;
@@ -32,7 +37,8 @@ export class TodoComponent implements OnInit {
     id: [null],
     listId: [null],
     priority: [''],
-    note: ['']
+    note: [''],
+    color: ['#FFFFFF']
   });
 
 
@@ -55,6 +61,16 @@ export class TodoComponent implements OnInit {
       error => console.error(error)
     );
   }
+
+  getColorName(colorCode: string): string {
+    return Color.colorNames[colorCode];
+  }
+
+  // In TodoComponent
+
+changeColor(item: TodoItemDto, color: string) {
+  item.color = color;
+}
 
   // Lists
   remainingItems(list: TodoListDto): number {
@@ -163,6 +179,7 @@ export class TodoComponent implements OnInit {
 
         this.selectedItem.priority = item.priority;
         this.selectedItem.note = item.note;
+        this.selectedItem.color = item.color;
         this.itemDetailsModalRef.hide();
         this.itemDetailsFormGroup.reset();
       },
