@@ -1,4 +1,5 @@
-﻿using Todo_App.Application.Common.Mappings;
+﻿using AutoMapper;
+using Todo_App.Application.Common.Mappings;
 using Todo_App.Domain.Entities;
 
 namespace Todo_App.Application.TodoLists.Queries.GetTodos;
@@ -17,4 +18,11 @@ public class TodoListDto : IMapFrom<TodoList>
     public string? Colour { get; set; }
 
     public IList<TodoItemDto> Items { get; set; }
+   
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<TodoList, TodoListDto>()
+                .ForMember(d => d.Items, opt => opt.MapFrom(s => s.Items.Where(i => i.IsDeleted == false)));
+        }
+    
 }

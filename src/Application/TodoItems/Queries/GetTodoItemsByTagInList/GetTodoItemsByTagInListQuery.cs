@@ -28,7 +28,7 @@ public class GetTodoItemsByTagInListQueryHandler : IRequestHandler<GetTodoItemsB
         // Get the todo items that have the specified tag and are in the specified list
         var todoItemsWithGivenTagInList = await _context.TodoItemTags
             .Include(tit => tit.TodoItem)
-            .Where(tit => tit.TagId == request.TagId && tit.TodoItem.ListId == request.ListId)
+            .Where(tit => tit.TagId == request.TagId && tit.TodoItem.ListId == request.ListId && tit.TodoItem.IsDeleted == false)
             .Select(tit => tit.TodoItem)
             .ToListAsync(cancellationToken);
 
