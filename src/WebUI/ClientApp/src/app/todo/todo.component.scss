@@ -36,3 +36,49 @@
 .modal-footer {
   display: block;
 }
+
+.tag-add-container {
+  float: right;
+  margin-left: 8px;
+  margin-top: 23px;
+}
+
+h3 {
+  color: black;
+  font-weight: bold;
+}
+
+.tag-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.tag-name {
+  margin-right: 10px;
+}
+
+.delete-button {
+  
+  color: red;
+  border: none;
+  cursor: pointer;
+}
+
+.top-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 1px;
+}
+
+.tag-item {
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

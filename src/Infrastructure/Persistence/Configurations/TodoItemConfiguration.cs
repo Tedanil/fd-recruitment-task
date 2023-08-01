@@ -14,5 +14,13 @@ public class TodoItemConfiguration : IEntityTypeConfiguration<TodoItem>
 
         builder.Property(t => t.Note)
             .HasMaxLength(2);
+
+        builder
+            .OwnsOne(b => b.Colour);
+
+        builder
+               .HasMany(t => t.TodoItemTags)
+               .WithOne(tt => tt.TodoItem)
+               .HasForeignKey(tt => tt.TodoItemId);
     }
 }

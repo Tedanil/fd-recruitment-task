@@ -10,14 +10,13 @@
     <div class="col-sm-4">
       <div class="clearfix">
         <h2 class="float-start">Lists</h2>
-        <button class="btn btn-default float-end" title="New List..."
-          (click)="showNewListModal(newListModalTemplate)">
+        <button class="btn btn-default float-end" title="New List..." (click)="showNewListModal(newListModalTemplate)">
           <i class="bi bi-journal-plus"></i>
         </button>
       </div>
       <ul class="list-group">
         <li *ngFor="let list of lists; index as i" class="list-group-item"
-          [ngClass]="{ 'active': selectedList == list }" (click)="selectedList = list">
+          [ngClass]="{ 'active': selectedList == list }" (click)="selectList(list)">
           <div class="clearfix">
             <div class="float-start">
               {{ list.title }}
@@ -32,13 +31,20 @@
     <div class="col-sm-8" *ngIf="selectedList">
       <div class="clearfix">
         <h2 class="float-start">{{ selectedList.title }}</h2>
+        <div class="float-end">
+          <select [(ngModel)]="selectedTag" (ngModelChange)="filterItemsByTag()" class="form-control">
+            <option value="">Filter by tag...</option>
+            <option *ngFor="let tag of allTags" [value]="tag.id">{{tag.name}}</option>
+          </select>
+        </div>
         <button id="listOptions" class="btn btn-default float-end" title="List Options..."
           (click)="showListOptionsModal(listOptionsModalTemplate)">
           <i class="bi bi-three-dots-vertical"></i>
         </button>
       </div>
       <ul id="todo-items" class="list-group mb-2">
-        <li class="list-group-item" *ngFor="let item of selectedList.items; index as i">
+        <li class="list-group-item" *ngFor="let item of selectedList.items; index as i"
+          [ngStyle]="{'background-color': item.color}">
           <div class="d-flex">
             <div class="todo-item-checkbox">
               <input type="checkbox" [(ngModel)]="item.done" (change)="updateItem(item)" />
@@ -105,6 +111,20 @@
 <ng-template #itemDetailsModalTemplate>
   <div class="modal-header">
     <h4 class="modal-title pull-left">Item Details</h4>
+    <div class="tag-add-container">
+      <div [formGroup]="itemDetailsFormGroup">    
+        <div class="input-container">
+          <input type="text" formControlName="newTag" placeholder="Enter new tag">
+          <button type="button" class="btn-primary"
+            (click)="addTagToItem(itemDetailsFormGroup.get('id').value, itemDetailsFormGroup.get('newTag').value)">Add Tag</button>
+        </div>
+        <div class="top-tags-container">
+          <div *ngFor="let tag of topTags" class="tag-item" (click)="itemDetailsFormGroup.get('newTag').setValue(tag.name)">
+            {{ tag.name }},
+          </div>
+        </div>        
+      </div>
+    </div>    
     <button type="button" class="close btn-close pull-right" aria-label="Close" (click)="itemDetailsModalRef.hide()">
       <span aria-hidden="true" class="visually-hidden">&times;</span>
     </button>
@@ -114,7 +134,7 @@
       <div class="form-group">
         <label for="list">List</label>
         <select class="form-control" formControlName="listId">
-          <option [ngValue]="list.id" *ngFor="let list of lists">{{ list.title }}</option>
+          <option [ngValue]="list.id" *ngFor="let list of lists">{{ list.title }} </option>
         </select>
       </div>
       <div class="form-group">
@@ -124,9 +144,23 @@
         </select>
       </div>
       <div class="form-group">
+        <label for="color">Color</label>
+        <select class="form-control" formControlName="color">
+          <option [ngValue]="color" *ngFor="let color of colors" [style.background-color]="color">{{ getColorName(color)
+            }}</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label for="note">Note</label>
         <textarea id="note" class="form-control" rows="3" formControlName="note"></textarea>
       </div>
+      <div>
+        <h3>Tags</h3>
+        <div *ngFor="let tag of tags$ | async" class="tag-container">
+          <span class="tag-name">{{ tag.name }}</span>
+          <button class="delete-button" (click)="deleteTag(itemDetailsFormGroup.get('id').value, tag.id)">X</button>
+        </div>
+      </div>      
     </form>
     <div *ngIf="debug">
       <pre>{{ itemDetailsFormGroup.value | json }}</pre>
@@ -135,7 +169,8 @@
   <div class="modal-footer">
     <div class="clearfix">
       <div class="float-start">
-        <button class="btn btn-default text-danger" (click)="deleteItem(selectedItem, true)">{{deleting ? 'Deleting ' + deleteCountDown + ' ...' : 'Delete'}}</button>
+        <button class="btn btn-default text-danger" (click)="deleteItem(selectedItem, true)">{{deleting ? 'Deleting ' +
+          deleteCountDown + ' ...' : 'Delete'}}</button>
       </div>
       <div class="float-end">
         <button class="btn btn-default" (click)="itemDetailsModalRef.hide()">Cancel</button>

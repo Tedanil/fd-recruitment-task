@@ -28,10 +28,13 @@ public class DeleteTodoListCommandHandler : IRequestHandler<DeleteTodoListComman
             throw new NotFoundException(nameof(TodoList), request.Id);
         }
 
-        _context.TodoLists.Remove(entity);
+        
+        entity.IsDeleted = true;
 
+        
         await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }
+
 }
