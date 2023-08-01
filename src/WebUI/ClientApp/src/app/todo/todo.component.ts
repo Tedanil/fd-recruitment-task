@@ -7,9 +7,11 @@ import {
   TodoListsClient, TodoItemsClient,
   TodoListDto, TodoItemDto, PriorityLevelDto,
   CreateTodoListCommand, UpdateTodoListCommand,
-  CreateTodoItemCommand, UpdateTodoItemDetailCommand
+  CreateTodoItemCommand, UpdateTodoItemDetailCommand, TodoItemTagClient, CreateTagCommand, TagDto, TagsClient, TodosByTagInListVm
 } from '../web-api-client';
 import { Color } from '../models/color';
+import { Observable } from 'rxjs';
+
 
 @Component({
   selector: 'app-todo-component',
@@ -24,12 +26,19 @@ export class TodoComponent implements OnInit {
   lists: TodoListDto[];
   priorityLevels: PriorityLevelDto[];
   selectedList: TodoListDto;
+  staticSelectedList: TodoListDto;
   selectedItem: TodoItemDto;
   newListEditor: any = {};
   listOptionsEditor: any = {};
   newListModalRef: BsModalRef;
   colors = Color.SupportedColors;
   selectedColor = 'white';
+  newTag: string;
+  tags$: Observable<TagDto[]>;
+  topTags: TagDto[];
+  selectedTag: string = '';
+  allTags: TagDto[];
+  todoItems: TodoItemDto[];
   listOptionsModalRef: BsModalRef;
   deleteListModalRef: BsModalRef;
   itemDetailsModalRef: BsModalRef;
@@ -38,7 +47,8 @@ export class TodoComponent implements OnInit {
     listId: [null],
     priority: [''],
     note: [''],
-    color: ['#FFFFFF']
+    color: ['#FFFFFF'],
+    newTag: [''],
   });
 
 
@@ -46,6 +56,8 @@ export class TodoComponent implements OnInit {
     private listsClient: TodoListsClient,
     private itemsClient: TodoItemsClient,
     private modalService: BsModalService,
+    private tagsClient: TodoItemTagClient,
+    private tagsClient2: TagsClient,
     private fb: FormBuilder
   ) { }
 
@@ -56,21 +68,28 @@ export class TodoComponent implements OnInit {
         this.priorityLevels = result.priorityLevels;
         if (this.lists.length) {
           this.selectedList = this.lists[0];
+          // deep copy
+          if (this.selectedList) {
+            this.staticSelectedList = TodoListDto.fromJS(this.selectedList);
+          }
         }
       },
       error => console.error(error)
     );
+    this.itemDetailsFormGroup.get('id').valueChanges.subscribe(
+      todoItemId => {
+        this.getTagsForItem(todoItemId);
+      }
+    );
+    this.getTopTags();
+    this.getAllTags();
   }
+
+
 
   getColorName(colorCode: string): string {
     return Color.colorNames[colorCode];
   }
-
-  // In TodoComponent
-
-changeColor(item: TodoItemDto, color: string) {
-  item.color = color;
-}
 
   // Lists
   remainingItems(list: TodoListDto): number {
@@ -158,7 +177,7 @@ changeColor(item: TodoItemDto, color: string) {
 
     this.itemDetailsModalRef = this.modalService.show(template);
     this.itemDetailsModalRef.onHidden.subscribe(() => {
-        this.stopDeleteCountDown();
+      this.stopDeleteCountDown();
     });
   }
 
@@ -277,5 +296,88 @@ changeColor(item: TodoItemDto, color: string) {
     clearInterval(this.deleteCountDownInterval);
     this.deleteCountDown = 0;
     this.deleting = false;
+  }
+
+  addTagToItem(todoItemId: number, tagName: string) {
+    const command = new CreateTagCommand();
+    command.tagName = tagName;
+
+    this.tagsClient.addTagToTodoItem(todoItemId, command).subscribe(
+      result => {
+        console.log("Tag successfully added");
+        this.getTagsForItem(todoItemId);
+        this.itemDetailsFormGroup.get('newTag').setValue('');
+        this.getAllTags();
+      },
+      error => {
+        console.error(error);
+      }
+    );
+  }
+
+  getTagsForItem(todoItemId: number) {
+    this.tags$ = this.tagsClient.getTagsForTodoItem(todoItemId);
+  }
+
+  deleteTag(todoItemId: number, tagId: number): void {
+    this.tagsClient.removeTagFromTodoItem(todoItemId, tagId)
+      .subscribe(
+        response => {
+          console.log(response);
+          this.getTagsForItem(todoItemId);
+        },
+        error => console.error(error)
+      );
+  }
+
+  getTopTags(): void {
+    this.tagsClient2.getTopTags().subscribe(data => {
+      if (data && data.tags) {
+        this.topTags = data.tags;
+        console.log(data)
+      } else {
+        console.error('No tags received');
+      }
+    }, error => console.error('HTTP request error: ', error));
+  }
+
+  getAllTags(): void {
+    this.tagsClient2.getAllTags().subscribe(
+      (response) => {
+        this.allTags = response.tags;
+        console.log(this.allTags);
+      },
+      (error) => {
+        console.error('Error occurred while fetching all tags:', error);
+      }
+    );
+  }
+
+  filterItemsByTag(): void {
+    if (!this.selectedTag || this.selectedTag === '') {
+      this.selectedList.items = this.staticSelectedList.items;
+      return;
+    }
+
+    if (!this.selectedList) return;
+
+    const tagId = Number(this.selectedTag);
+    console.log(tagId)
+
+    this.itemsClient.getTodoItemsByTagInList(tagId, this.selectedList.id).subscribe(
+      (response: TodosByTagInListVm) => {
+        this.todoItems = response.items;
+        console.log(this.todoItems);
+        this.selectedList.items = this.todoItems;
+      },
+      error => {
+        console.error(error);
+      }
+    );
+  }
+
+  selectList(list: TodoListDto): void {
+    this.selectedList = list;
+    this.staticSelectedList = TodoListDto.fromJS(this.selectedList);
   }
 }

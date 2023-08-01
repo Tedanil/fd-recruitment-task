@@ -4,6 +4,7 @@ using Todo_App.Application.TodoItems.Commands.CreateTodoItem;
 using Todo_App.Application.TodoItems.Commands.DeleteTodoItem;
 using Todo_App.Application.TodoItems.Commands.UpdateTodoItem;
 using Todo_App.Application.TodoItems.Commands.UpdateTodoItemDetail;
+using Todo_App.Application.TodoItems.Queries.GetTodoItemsByTagInList;
 using Todo_App.Application.TodoItems.Queries.GetTodoItemsWithPagination;
 
 namespace Todo_App.WebUI.Controllers;
@@ -15,6 +16,13 @@ public class TodoItemsController : ApiControllerBase
     {
         return await Mediator.Send(query);
     }
+
+    [HttpGet("ByTag/{tagId}/InList/{listId}")]
+    public async Task<ActionResult<TodosByTagInListVm>> GetTodoItemsByTagInList(int tagId, int listId)
+    {
+        return await Mediator.Send(new GetTodoItemsByTagInListQuery(tagId, listId));
+    }
+
 
     [HttpPost]
     public async Task<ActionResult<int>> Create(CreateTodoItemCommand command)

@@ -13,6 +13,8 @@ public class TodoItem : BaseAuditableEntity
     public DateTime? Reminder { get; set; }
     public Colour Colour { get; set; } = Colour.White;
 
+    public ICollection<TodoItemTag> TodoItemTags { get; set; }
+
     private bool _done;
     public bool Done
     {
